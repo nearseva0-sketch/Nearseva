@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NearSeva - Find Local Services</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <header class="topbar">
+    <nav class="nav">
+      <div class="brand"><div class="brand-mark">⌖</div>NearSeva</div>
+      <div class="nav-actions">
+        <button class="btn btn-outline" onclick="toggleMyRequests()">My Requests</button>
+        <a href="provider.html" class="btn btn-dark">Provider Portal →</a>
+      </div>
+    </nav>
+  </header>
+
+  <section class="hero">
+    <div class="hero-inner">
+      <div class="eyebrow">Your neighbourhood, your helpers</div>
+      <h1>Local help is closer than you think.</h1>
+      <p>Find nearby plumbers, electricians & home-service professionals instantly.</p>
+      <button class="btn btn-primary" onclick="scrollToServices()">Find a Service ↓</button>
+    </div>
+  </section>
+
+  <main class="container" id="servicesSection">
+    <div class="section-heading">
+      <div>
+        <h2>Available Service Providers</h2>
+        <p class="subtext">Badlapur Local Region</p>
+      </div>
+    </div>
+
+    <div class="location-bar">
+      <label><b>Area:</b></label>
+      <input id="searchArea" value="Badlapur" oninput="renderProviders()">
+    </div>
+
+    <div class="provider-grid" id="providerGrid"></div>
+
+    <!-- My Requests Section -->
+    <section id="myRequestsPanel" class="panel hidden" style="margin-top:30px;">
+      <div class="section-heading">
+        <h2>My Service Requests & Tracking</h2>
+        <button class="btn btn-outline btn-small" onclick="toggleMyRequests()">Close</button>
+      </div>
+      <div id="customerRequestsList" class="request-list"></div>
+    </section>
+  </main>
+
+  <!-- Booking Modal -->
+  <div id="bookingModal" class="modal-backdrop hidden">
+    <div class="modal">
+      <div class="modal-header">
+        <h2 id="modalTitle">Request Service</h2>
+        <button class="btn btn-outline btn-small" onclick="closeBooking()">×</button>
+      </div>
+      <form onsubmit="submitRequest(event)">
+        <input type="hidden" id="bookProviderName">
+        <div class="form-grid">
+          <div class="field">
+            <label>Your Name</label>
+            <input id="custName" required placeholder="Enter your name">
+          </div>
+          <div class="field">
+            <label>Phone Number</label>
+            <input id="custPhone" type="tel" required placeholder="10-digit mobile number">
+          </div>
+          <div class="field full">
+            <label>Your Address / Locality</label>
+            <input id="custAddress" required value="Badlapur East">
+          </div>
+          <div class="field full">
+            <label>Describe the Problem</label>
+            <textarea id="custDesc" rows="3" required placeholder="e.g., Water leakage under kitchen sink"></textarea>
+          </div>
+          <div class="field full">
+            <button class="btn btn-primary" type="submit">Send Request to Provider</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <footer class="footer">NearSeva · College Project Prototype</footer>
+
+  <script>
+    function scrollToServices() {
+      document.getElementById('servicesSection').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function renderProviders() {
+      const query = document.getElementById('searchArea').value.toLowerCase();
+      const grid = document.getElementById('providerGrid');
+      
+      // Load saved providers or default sample list
+      let providers = JSON.parse(localStorage.getItem('nearseva_providers') || JSON.stringify([
+        { id: "p1", name: "Aarav Plumbing Services", category: "Plumber", icon: "🔧", area: "Badlapur", price: "₹199 visit", rating: "4.8", desc: "Tap leaks, pipe repairs & fittings." },
+        { id: "p2", name: "Bright Home Electrician", category: "Electrician", icon: "💡", area: "Badlapur", price: "₹249 visit", rating: "4.7", desc: "Switches, fans & wiring repairs." },
+        { id: "p3", name: "CoolCare AC Service", category: "AC Repair", icon: "❄️", area: "Badlapur", price: "₹299 visit", rating: "4.6", desc: "AC servicing, gas filling & repairs." }
+      ]));
+
+      const filtered = providers.filter(p => p.area.toLowerCase().includes(query) || p.category.toLowerCase().includes(query));
+
+      if (filtered.length === 0) {
+        grid.innerHTML = '<div class="empty-state">No providers found in this area.</div>';
+        return;
+      }
+
+      grid.innerHTML = filtered.map(p => `
+        <div class="provider-card">
+          <div class="provider-top">
+            <div class="provider-icon">${p.icon || '🛠️'}</div>
+            <div>
+              <h3>${p.name}</h3>
+              <span style="color:var(--teal); font-weight:700; font-size:13px;">${p.category}</span>
+            </div>
+          </div>
+          <div class="provider-meta">
+            <div>📍 ${p.area} · ⭐ ${p.rating}</div>
+            <div>💰 ${p.price}</div>
+            <div>📝 ${p.desc}</div>
+          </div>
+          <button class="btn btn-primary" onclick="openBooking('${p.name}')">Request Service</button>
+        </div>
+      `).join('');
+    }
+
+    function openBooking(providerName) {
+      document.getElementById('bookProviderName').value = providerName;
+      document.getElementById('modalTitle').textContent = "Request: " + providerName;
+      document.getElementById('bookingModal').classList.remove('hidden');
+    }
+
+    function closeBooking() {
+      document.getElementById('bookingModal').classList.add('hidden');
+    }
+
+    function submitRequest(e) {
+      e.preventDefault();
+      const newReq = {
+        id: "NS" + Math.floor(100000 + Math.random() * 900000),
+        providerName: document.getElementById('bookProviderName').value,
+        custName: document.getElementById('custName').value,
+        custPhone: document.getElementById('custPhone').value,
+        address: document.getElementById('custAddress').value,
+        desc: document.getElementById('custDesc').value,
+        status: "Pending",
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      };
+
+      let requests = JSON.parse(localStorage.getItem('nearseva_requests') || '[]');
+      requests.unshift(newReq);
+      localStorage.setItem('nearseva_requests', JSON.stringify(requests));
+
+      closeBooking();
+      alert("Request sent successfully! You can track it using 'My Requests'.");
+      renderCustomerRequests();
+    }
+
+    function toggleMyRequests() {
+      const panel = document.getElementById('myRequestsPanel');
+      panel.classList.toggle('hidden');
+      if (!panel.classList.contains('hidden')) {
+        renderCustomerRequests();
+      }
+    }
+
+    function renderCustomerRequests() {
+      const list = document.getElementById('customerRequestsList');
+      const requests = JSON.parse(localStorage.getItem('nearseva_requests') || '[]');
+
+      if (requests.length === 0) {
+        list.innerHTML = '<p style="color:var(--muted)">No requests made yet.</p>';
+        return;
+      }
+
+      list.innerHTML = requests.map(r => `
+        <div class="request-card">
+          <div>
+            <h3>${r.providerName}</h3>
+            <p><b>Problem:</b> ${r.desc}</p>
+            <p><b>Status:</b> <span class="status ${r.status}">${r.status}</span></p>
+            ${r.status === 'Accepted' || r.status === 'Completed' ? `
+              <div style="background:#eaf8f3; padding:10px; border-radius:8px; margin-top:8px;">
+                <p style="color:#146b5d; margin:0 0 5px 0;"><b>Provider Accepted your request!</b></p>
+                <a href="tel:+919876543210" class="btn btn-primary btn-small">📞 Call Provider</a>
+              </div>
+            ` : '<p style="font-size:12px; color:var(--muted); margin-top:4px;">Waiting for provider to accept...</p>'}
+          </div>
+        </div>
+      `).join('');
+    }
+
+    renderProviders();
+  </script>
+</body>
+</html>

@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NearSeva - Provider Dashboard</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <header class="topbar">
+    <nav class="nav">
+      <div class="brand"><div class="brand-mark">⌖</div>NearSeva Provider</div>
+      <a href="index.html" class="btn btn-outline btn-small">← Customer Home</a>
+    </nav>
+  </header>
+
+  <main class="container">
+    <!-- Google Login Simulation Panel -->
+    <section id="loginPanel" class="panel" style="max-width: 450px; margin: 40px auto; text-align: center;">
+      <h2>Provider Portal Login</h2>
+      <p class="subtext" style="margin-bottom: 20px;">Manage your business and view customer requests.</p>
+      <button class="btn btn-primary" onclick="simulateGoogleLogin()" style="width: 100%; padding: 12px; display: flex; align-items: center; justify-content: center; gap: 10px;">
+        <span>🔐 Continue with Google (Demo)</span>
+      </button>
+    </section>
+
+    <!-- Dashboard Panel (Hidden until logged in) -->
+    <section id="dashboardPanel" class="hidden">
+      <div class="section-heading">
+        <div>
+          <h2 id="dashboardTitle">Provider Dashboard</h2>
+          <p class="subtext">Category: <span id="dashboardCategory" style="color:var(--teal); font-weight:bold;">Plumber</span> | Status: <span style="color:var(--teal); font-weight:bold;">Online</span></p>
+        </div>
+        <button class="btn btn-danger btn-small" onclick="logoutProvider()">Log Out</button>
+      </div>
+
+      <!-- Business Details Form -->
+      <div class="panel">
+        <h3 style="margin-top:0; color:var(--navy);">Manage Business Details</h3>
+        <form onsubmit="saveBusinessInfo(event)">
+          <div class="form-grid">
+            <div class="field">
+              <label>Business Name</label>
+              <input id="busName" required value="Aarav Plumbing Services">
+            </div>
+            <div class="field">
+              <label>Select Service Category</label>
+              <select id="busCategory" required>
+                <option value="Plumber">Plumber</option>
+                <option value="Electrician">Electrician</option>
+                <option value="AC Repair">AC Repair</option>
+                <option value="Carpenter">Carpenter</option>
+                <option value="Painter">Painter</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Service Area</label>
+              <input id="busArea" required value="Badlapur">
+            </div>
+            <div class="field">
+              <label>Pricing / Visit Estimate</label>
+              <input id="busPrice" required value="₹199 visit">
+            </div>
+            <div class="field full">
+              <label>Work Description</label>
+              <input id="busDesc" required value="Tap leaks, pipe repairs & fittings.">
+            </div>
+            <div class="field full">
+              <button class="btn btn-primary btn-small" type="submit">Save & Update Company Profile</button>
+            </div>
+          </div>
+        </form>
+      </div>
+
+      <!-- Incoming Requests -->
+      <div class="panel">
+        <h3 style="margin-top:0; color:var(--navy);">Incoming Customer Requests</h3>
+        <div id="providerRequestsList" class="request-list"></div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">NearSeva · College Project Prototype</footer>
+
+  <script>
+    function simulateGoogleLogin() {
+      localStorage.setItem("provider_logged_in", "true");
+      checkLoginState();
+    }
+
+    function checkLoginState() {
+      const isLoggedIn = localStorage.getItem("provider_logged_in");
+      if (isLoggedIn === "true") {
+        document.getElementById('loginPanel').classList.add('hidden');
+        document.getElementById('dashboardPanel').classList.remove('hidden');
+        loadSavedProfile();
+        renderProviderRequests();
+      } else {
+        document.getElementById('loginPanel').classList.remove('hidden');
+        document.getElementById('dashboardPanel').classList.add('hidden');
+      }
+    }
+
+    function logoutProvider() {
+      localStorage.removeItem("provider_logged_in");
+      checkLoginState();
+    }
+
+    function loadSavedProfile() {
+      let providers = JSON.parse(localStorage.getItem('nearseva_providers') || '[]');
+      let currentProvider = providers.find(p => p.id === 'p1');
+      if (currentProvider) {
+        document.getElementById('busName').value = currentProvider.name;
+        document.getElementById('busCategory').value = currentProvider.category;
+        document.getElementById('busArea').value = currentProvider.area;
+        document.getElementById('busPrice').value = currentProvider.price;
+        document.getElementById('busDesc').value = currentProvider.desc;
+        
+        document.getElementById('dashboardTitle').textContent = currentProvider.name;
+        document.getElementById('dashboardCategory').textContent = currentProvider.category;
+      }
+    }
+
+    function saveBusinessInfo(e) {
+      e.preventDefault();
+      
+      const updatedName = document.getElementById('busName').value;
+      const updatedCategory = document.getElementById('busCategory').value;
+      const updatedArea = document.getElementById('busArea').value;
+      const updatedPrice = document.getElementById('busPrice').value;
+      const updatedDesc = document.getElementById('busDesc').value;
+
+      let providers = JSON.parse(localStorage.getItem('nearseva_providers') || JSON.stringify([
+        { id: "p1", name: "Aarav Plumbing Services", category: "Plumber", icon: "🔧", area: "Badlapur", price: "₹199 visit", rating: "4.8", desc: "Tap leaks, pipe repairs & fittings." },
+        { id: "p2", name: "Bright Home Electrician", category: "Electrician", icon: "💡", area: "Badlapur", price: "₹249 visit", rating: "4.7", desc: "Switches, fans & wiring repairs." },
+        { id: "p3", name: "CoolCare AC Service", category: "AC Repair", icon: "❄️", area: "Badlapur", price: "₹299 visit", rating: "4.6", desc: "AC servicing, gas filling & repairs." }
+      ]));
+
+      // Update primary provider (p1)
+      let p1 = providers.find(p => p.id === 'p1');
+      if (p1) {
+        p1.name = updatedName;
+        p1.category = updatedCategory;
+        p1.area = updatedArea;
+        p1.price = updatedPrice;
+        p1.desc = updatedDesc;
+        if(updatedCategory === 'Electrician') p1.icon = '💡';
+        else if(updatedCategory === 'AC Repair') p1.icon = '❄️';
+        else if(updatedCategory === 'Carpenter') p1.icon = '🪚';
+        else p1.icon = '🔧';
+      }
+
+      localStorage.setItem('nearseva_providers', JSON.stringify(providers));
+      
+      document.getElementById('dashboardTitle').textContent = updatedName;
+      document.getElementById('dashboardCategory').textContent = updatedCategory;
+
+      alert("Business details updated successfully! Your company name and category now show live on the customer page.");
+    }
+
+    function renderProviderRequests() {
+      const list = document.getElementById('providerRequestsList');
+      const requests = JSON.parse(localStorage.getItem('nearseva_requests') || '[]');
+
+      if (requests.length === 0) {
+        list.innerHTML = '<p style="color:var(--muted)">No customer requests yet.</p>';
+        return;
+      }
+
+      list.innerHTML = requests.map(r => `
+        <div class="request-card">
+          <div>
+            <h3>🔔 ${r.providerName} Request (${r.id})</h3>
+            <p><b>Problem:</b> ${r.desc}</p>
+            <p><b>Area:</b> ${r.address}</p>
+            
+            ${r.status === 'Accepted' || r.status === 'Completed' ? `
+              <div style="background:#eaf8f3; padding:10px; border-radius:8px; margin-top:8px;">
+                <p style="color:#146b5d; margin:0 0 4px 0;"><b>Customer Contact Details Unlocked:</b></p>
+                <p style="margin:2px 0;">👤 Name: <b>${r.custName}</b></p>
+                <p style="margin:2px 0;">📞 Phone: <a href="tel:${r.custPhone}" style="color:var(--teal); font-weight:bold;">${r.custPhone}</a></p>
+                <a href="tel:${r.custPhone}" class="btn btn-primary btn-small" style="margin-top:6px; display:inline-block; text-decoration:none;">📞 Call Customer</a>
+              </div>
+            ` : `
+              <p style="font-size:12px; color:#805515; background:#fff8e8; padding:6px; border-radius:6px; margin-top:6px;">🔒 Customer contact details remain hidden until you accept this request.</p>
+            `}
+
+            <div style="margin-top:10px; display:flex; gap:8px; align-items:center;">
+              ${r.status === 'Pending' ? `
+                <button class="btn btn-primary btn-small" onclick="updateStatus('${r.id}', 'Accepted')">Accept</button>
+                <button class="btn btn-danger btn-small" onclick="updateStatus('${r.id}', 'Rejected')">Reject</button>
+              ` : ''}
+              ${r.status === 'Accepted' ? `
+                <button class="btn btn-primary btn-small" onclick="updateStatus('${r.id}', 'Completed')">Mark Completed</button>
+              ` : ''}
+              <span class="status ${r.status}" style="margin-left:auto;">${r.status}</span>
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function updateStatus(id, newStatus) {
+      let requests = JSON.parse(localStorage.getItem('nearseva_requests') || '[]');
+      const req = requests.find(r => r.id === id);
+      if (req) {
+        req.status = newStatus;
+        localStorage.setItem('nearseva_requests', JSON.stringify(requests));
+        renderProviderRequests();
+      }
+    }
+
+    checkLoginState();
+  </script>
+</body>
+</html>
